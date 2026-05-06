@@ -58,6 +58,19 @@ claude mcp add memory -- npx -y @modelcontextprotocol/server-memory
 claude mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem ~/www/project
 ```
 
+## Dev skills (for developing this project)
+
+```
+/validate       → check topic-template integrity before release
+/release <ver>  → changelog + git tag + GitHub release
+/issue          → create GitHub issue (bug / feature / improvement)
+/pr             → create pull request with structured description
+```
+
+MCPs needed for dev:
+- `github` MCP — issues, PRs, releases (see docs/mcp-setup.md)
+- `git` MCP — already in standard setup
+
 ## Philosophy
 
 - Each topic = one Git repo + one Obsidian vault
