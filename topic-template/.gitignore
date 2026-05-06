@@ -1,0 +1,23 @@
+# Obsidian workspace state (keep config, drop personal workspace)
+.obsidian/workspace*
+.obsidian/cache
+.obsidian/.trash/
+
+# Scratch
+scratch/
+
+# Docker data
+**/data/
+**/logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

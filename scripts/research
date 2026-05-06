@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# research — CLI to manage research topics
+# Usage: research new <topic> <target-dir>
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$SCRIPT_DIR/../topic-template"
+
+usage() {
+  echo "Usage:"
+  echo "  research new <topic-name> <target-dir>"
+  echo ""
+  echo "Examples:"
+  echo "  research new kafka ~/www/project/kafka"
+  echo "  research new aws ~/www/project/aws"
+  exit 1
+}
+
+cmd_new() {
+  local topic="${1:-}"
+  local target="${2:-}"
+
+  if [[ -z "$topic" || -z "$target" ]]; then
+    echo "Error: topic name and target directory are required."
+    usage
+  fi
+
+  target="${target/#\~/$HOME}"
+
+  if [[ -d "$target" && -n "$(ls -A "$target" 2>/dev/null)" ]]; then
+    echo "Warning: '$target' already exists and is not empty."
+    read -r -p "Merge template into it anyway? (y/n): " confirm
+    [[ "$confirm" == "y" ]] || { echo "Aborted."; exit 0; }
+  fi
+
+  echo "Creating research topic: $topic"
+  echo "Target: $target"
+  echo ""
+
+  # Copy template
+  mkdir -p "$target"
+  cp -rn "$TEMPLATE_DIR/." "$target/" 2>/dev/null || true
+
+  # Replace {{TOPIC}} placeholder
+  local date
+  date=$(date +%Y-%m-%d)
+  find "$target" -name "*.md" | while read -r file; do
+    sed -i "s/{{TOPIC}}/$topic/g" "$file"
+    sed -i "s/{{DATE}}/$date/g" "$file"
+  done
+
+  # Init git if not already a repo
+  if [[ ! -d "$target/.git" ]]; then
+    git -C "$target" init
+    git -C "$target" branch -m main
+    echo "✓ Git initialized"
+  fi
+
+  # Create .gitkeep files for empty dirs
+  for dir in 01-inbox docs scenarios docker examples assets scratch; do
+    mkdir -p "$target/$dir"
+    [[ -z "$(ls -A "$target/$dir" 2>/dev/null)" ]] && touch "$target/$dir/.gitkeep"
+  done
+
+  echo ""
+  echo "✓ Topic '$topic' created at: $target"
+  echo ""
+  echo "Next steps:"
+  echo "  1. cd $target"
+  echo "  2. Open Obsidian → Open folder as vault → select this folder"
+  echo "  3. Run: claude"
+  echo "  4. Start with: /plan <first-subtopic>"
+  echo ""
+  echo "Optional — set up a GitHub remote:"
+  echo "  gh repo create $topic --public --source $target --push"
+}
+
+case "${1:-}" in
+  new) shift; cmd_new "$@" ;;
+  *) usage ;;
+esac
