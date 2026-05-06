@@ -44,6 +44,8 @@ When the user invokes `/commit` (optionally `/commit <message>`), execute:
 
 7. **Auto-run `/moc`** after commit if `docs/` or `scenarios/` files changed.
 
+8. **Auto-run `/memory sync`** after every commit to keep the knowledge graph current.
+
 ## Fallback behavior
 
 - Git MCP fails → use Bash git commands (always available)
