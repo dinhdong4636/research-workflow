@@ -1,3 +1,8 @@
+---
+model: claude-sonnet-4-6
+description: Scaffold lab structure and write README — needs structured writing
+---
+
 # /lab — Scaffold a New Lab/Scenario
 
 When the user invokes `/lab <name>` (or `/lab` without a name), execute:

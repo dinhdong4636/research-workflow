@@ -1,3 +1,8 @@
+---
+model: claude-haiku-4-5-20251001
+description: Scan vault files and regenerate MOC — structured, repetitive task
+---
+
 # /moc — Regenerate Map of Contents
 
 When the user invokes `/moc`, execute:

@@ -1,3 +1,8 @@
+---
+model: claude-sonnet-4-6
+description: Fetch URL and create structured note — needs good summarization
+---
+
 # /note — Fetch a URL and Create a Note
 
 When the user invokes `/note <url>` (or `/note` without a URL), execute:

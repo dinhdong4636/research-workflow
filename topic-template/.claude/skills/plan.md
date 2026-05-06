@@ -1,3 +1,8 @@
+---
+model: claude-sonnet-4-6
+description: Research topic and create outline — needs web search synthesis and reasoning
+---
+
 # /plan — Research & Plan a Subtopic
 
 When the user invokes `/plan <subtopic>`, execute this workflow:

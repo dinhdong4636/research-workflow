@@ -1,3 +1,8 @@
+---
+model: claude-haiku-4-5-20251001
+description: Smart git commit and push — mechanical task, no deep reasoning needed
+---
+
 # /commit — Smart Git Commit + Push
 
 When the user invokes `/commit` (optionally `/commit <message>`), execute:
