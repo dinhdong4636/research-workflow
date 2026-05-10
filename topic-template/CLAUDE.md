@@ -49,8 +49,8 @@ git pull
 claude
 ```
 
-**First thing every session:** run `/memory load` to restore context from the knowledge graph.
-This avoids re-reading all files and saves token usage significantly.
+Memory is handled automatically by the Memory MCP installed globally.
+No manual skill needed — Claude queries it when context is required.
 
 ### Add new content
 
@@ -74,13 +74,11 @@ Commit & push     → /commit
 
 | Skill | What it does |
 |---|---|
-| `/memory load` | Restore session context from knowledge graph (run first) |
-| `/memory sync` | Save current state to knowledge graph (auto-called by /commit) |
 | `/plan <subtopic>` | Research + outline + placeholder file |
 | `/note <url>` | Fetch URL → note with frontmatter |
 | `/lab <name>` | Scaffold lab/scenario folder |
 | `/moc` | Regenerate Map of Contents |
-| `/commit` | Smart git commit + push + memory sync |
+| `/commit` | Smart git commit + push |
 
 ---
 
