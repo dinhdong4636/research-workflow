@@ -72,6 +72,9 @@ cmd_new() {
   echo "  3. Run: claude"
   echo "  4. Start with: /plan <first-subtopic>"
   echo ""
+  echo "Read your notes as a web page:"
+  echo "  python3 -m http.server 8000   # then open http://localhost:8000/reader.html"
+  echo ""
   echo "Optional — set up a GitHub remote:"
   echo "  gh repo create $topic --public --source $target --push"
 }

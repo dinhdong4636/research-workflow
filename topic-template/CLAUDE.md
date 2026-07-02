@@ -68,6 +68,20 @@ Commit & push     → /commit
 /commit
 ```
 
+### Read notes as a web page
+
+`reader.html` renders every `.md` note (docs/, scenarios/, 00-index/, refs/…) into a
+single browsable page — no build step, no dependencies. Because browsers block reading
+local files over `file://`, serve the folder first:
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/reader.html
+```
+
+It auto-discovers files from the directory listing, resolves Obsidian `[[wikilinks]]`,
+and strips frontmatter. A read-only companion to Obsidian for quick sharing/review.
+
 ---
 
 ## Available skills

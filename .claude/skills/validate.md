@@ -28,6 +28,7 @@ Verify these files exist in `topic-template/`:
 - `refs/links.md`
 - `CLAUDE.md`
 - `.gitignore`
+- `reader.html`
 
 ### 2. Placeholders intact
 Each skill file must NOT contain hardcoded topic names — only `{{TOPIC}}`, `{{DATE}}`, `{{TITLE}}` placeholders.
@@ -54,7 +55,7 @@ Check: `01-inbox/`, `docs/`, `scenarios/`, `docker/`, `examples/`, `assets/`, `s
 ```
 Template Validation Report
 ──────────────────────────
-✓ Required files: 17/17
+✓ Required files: 18/18
 ✓ Placeholders: clean (no hardcoded topics)
 ✓ Model frontmatter: 5/5 skills
 ✓ Frontmatter schema: concept ✓, lab ✓

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes Reader</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #24292f; --muted: #57606a; --border: #d0d7de;
+    --sidebar-bg: #f6f8fa; --accent: #0969da; --code-bg: #f6f8fa;
+    --active-bg: #dbeafe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --fg: #c9d1d9; --muted: #8b949e; --border: #30363d;
+      --sidebar-bg: #161b22; --accent: #58a6ff; --code-bg: #161b22;
+      --active-bg: #1f3a5f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--fg); background: var(--bg); display: flex;
+  }
+  #sidebar {
+    width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+    background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 16px;
+  }
+  #sidebar h1 { font-size: 15px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  #filter {
+    width: 100%; padding: 6px 8px; margin-bottom: 12px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 14px;
+  }
+  .group-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
+  #tree a {
+    display: block; padding: 4px 8px; border-radius: 6px; color: var(--fg);
+    text-decoration: none; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #tree a:hover { background: var(--active-bg); }
+  #tree a.active { background: var(--accent); color: #fff; }
+  #main { flex: 1; height: 100vh; overflow-y: auto; }
+  #content { max-width: 860px; margin: 0 auto; padding: 40px 48px 120px; }
+  #content h1, #content h2 { border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+  #content h1:first-child { margin-top: 0; }
+  #content pre { background: var(--code-bg); padding: 14px; border-radius: 8px; overflow-x: auto; }
+  #content code { background: var(--code-bg); padding: .2em .4em; border-radius: 4px; font-size: 85%; }
+  #content pre code { background: none; padding: 0; }
+  #content table { border-collapse: collapse; }
+  #content th, #content td { border: 1px solid var(--border); padding: 6px 12px; }
+  #content blockquote { color: var(--muted); border-left: 3px solid var(--border); margin: 0; padding-left: 16px; }
+  #content img { max-width: 100%; }
+  #content a { color: var(--accent); }
+  .wikilink.missing { color: var(--muted); text-decoration: line-through dotted; cursor: help; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .notice { max-width: 700px; margin: 60px auto; padding: 24px; border: 1px solid var(--border); border-radius: 10px; }
+  .notice code { background: var(--code-bg); padding: .2em .4em; border-radius: 4px; }
+  @media (max-width: 720px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: 0; height: auto; max-height: 40vh; }
+    #main { height: auto; }
+    #content { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+  <nav id="sidebar">
+    <h1 id="site-title">Notes</h1>
+    <input id="filter" type="search" placeholder="Filter files…" autocomplete="off">
+    <div id="tree"></div>
+  </nav>
+  <main id="main"><div id="content"></div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+(function () {
+  const treeEl = document.getElementById('tree');
+  const contentEl = document.getElementById('content');
+  const filterEl = document.getElementById('filter');
+  const READER = location.pathname.split('/').pop(); // this file, to skip it
+  const EXCLUDE = [/(^|\/)\.git\//, /(^|\/)node_modules\//, /(^|\/)\.obsidian\//, /(^|\/)scratch\//];
+  let files = [];
+
+  // Derive a friendly title from the containing folder name.
+  const folder = decodeURIComponent(location.pathname.replace(/\/[^/]*$/, '').split('/').pop() || 'Notes');
+  const title = folder.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  document.title = title + ' — Notes';
+  document.getElementById('site-title').textContent = title;
+
+  if (location.protocol === 'file:') {
+    contentEl.innerHTML = notice(
+      'Serve this folder to read notes',
+      'Browsers block reading local files over <code>file://</code>. From this folder run:' +
+      '<pre>python3 -m http.server 8000</pre>then open <code>http://localhost:8000/' + READER + '</code>');
+    return;
+  }
+
+  // Recursively discover .md files via the server's directory listing.
+  async function walk(dir, depth) {
+    if (depth > 8) return;
+    let html;
+    try { html = await (await fetch(dir || './')).text(); }
+    catch (e) { return; }
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    for (const a of doc.querySelectorAll('a')) {
+      let href = a.getAttribute('href') || '';
+      if (!href || /^(\.\.|\/|#|\?|[a-z]+:)/i.test(href)) continue;
+      const full = dir + href;
+      if (EXCLUDE.some(r => r.test(full))) continue;
+      if (href.endsWith('/')) await walk(full, depth + 1);
+      else if (/\.md$/i.test(href) && decodeURIComponent(full) !== READER) files.push(decodeURIComponent(full));
+    }
+  }
+
+  function notice(h, body) { return '<div class="notice"><h2>' + h + '</h2><p>' + body + '</p></div>'; }
+
+  function buildTree() {
+    files.sort();
+    const groups = {};
+    for (const f of files) {
+      const slash = f.lastIndexOf('/');
+      const g = slash === -1 ? '/' : f.slice(0, slash);
+      (groups[g] = groups[g] || []).push(f);
+    }
+    treeEl.innerHTML = '';
+    Object.keys(groups).sort().forEach(g => {
+      const gt = document.createElement('div');
+      gt.className = 'group-title';
+      gt.textContent = g === '/' ? '(root)' : g;
+      treeEl.appendChild(gt);
+      groups[g].forEach(f => {
+        const a = document.createElement('a');
+        a.href = '#' + f;
+        a.dataset.path = f;
+        a.textContent = f.split('/').pop();
+        treeEl.appendChild(a);
+      });
+    });
+  }
+
+  function stripFrontmatter(md) {
+    const m = md.match(/^---\n([\s\S]*?)\n---\n?/);
+    return m ? { body: md.slice(m[0].length), fm: m[1] } : { body: md, fm: null };
+  }
+
+  // Resolve Obsidian [[wikilinks]] against the discovered file list.
+  function resolveWikilinks(md) {
+    return md.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => {
+      const t = target.trim().replace(/\.md$/i, '');
+      const hit = files.find(f => f.replace(/\.md$/i, '').toLowerCase().endsWith('/' + t.toLowerCase()) ||
+                                    f.replace(/\.md$/i, '').toLowerCase() === t.toLowerCase() ||
+                                    f.replace(/.*\//, '').replace(/\.md$/i, '').toLowerCase() === t.toLowerCase());
+      const text = (label || target).trim();
+      return hit ? '[' + text + '](#' + hit + ')'
+                 : '<span class="wikilink missing" title="No note found for: ' + t + '">' + text + '</span>';
+    });
+  }
+
+  async function render(path) {
+    if (!path) return;
+    let text;
+    try { text = await (await fetch(path)).text(); }
+    catch (e) { contentEl.innerHTML = notice('Not found', 'Could not load <code>' + path + '</code>'); return; }
+    const { body, fm } = stripFrontmatter(text);
+    const html = marked.parse(resolveWikilinks(body));
+    contentEl.innerHTML = (fm ? '<div class="meta">' + fmSummary(fm) + '</div>' : '') + html;
+    // Intercept in-vault links so navigation stays inside the reader.
+    contentEl.querySelectorAll('a[href$=".md"]').forEach(a => {
+      const raw = a.getAttribute('href');
+      if (/^[a-z]+:/i.test(raw)) return;
+      const resolved = new URL(raw, location.origin + '/' + path).pathname.replace(/^\//, '');
+      a.setAttribute('href', '#' + resolved);
+    });
+    document.getElementById('main').scrollTop = 0;
+    treeEl.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.path === path));
+  }
+
+  function fmSummary(fm) {
+    const get = k => (fm.match(new RegExp('^' + k + ':\\s*(.+)$', 'm')) || [])[1];
+    return ['status', 'difficulty', 'updated'].map(k => { const v = get(k); return v ? k + ': ' + v : null; })
+      .filter(Boolean).join(' · ') || 'frontmatter';
+  }
+
+  filterEl.addEventListener('input', () => {
+    const q = filterEl.value.toLowerCase();
+    treeEl.querySelectorAll('a').forEach(a => {
+      a.style.display = a.dataset.path.toLowerCase().includes(q) ? '' : 'none';
+    });
+    treeEl.querySelectorAll('.group-title').forEach(g => {
+      let n = g.nextElementSibling, any = false;
+      while (n && n.classList.contains('group-title') === false) {
+        if (n.tagName === 'A' && n.style.display !== 'none') any = true;
+        n = n.nextElementSibling;
+      }
+      g.style.display = any ? '' : 'none';
+    });
+  });
+
+  window.addEventListener('hashchange', () => render(decodeURIComponent(location.hash.slice(1))));
+
+  (async function init() {
+    await walk('', 0);
+    if (!files.length) { contentEl.innerHTML = notice('No notes found', 'No <code>.md</code> files were found under this folder.'); return; }
+    buildTree();
+    const start = decodeURIComponent(location.hash.slice(1)) ||
+      files.find(f => /(^|\/)MOC\.md$/i.test(f)) ||
+      files.find(f => /(^|\/)README\.md$/i.test(f)) || files[0];
+    render(start);
+  })();
+})();
+</script>
+</body>
+</html>

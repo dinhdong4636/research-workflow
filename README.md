@@ -6,6 +6,7 @@
 
 - **Topic template** — standard folder structure, Obsidian-ready from day one
 - **5 slash commands** — `/plan`, `/note`, `/lab`, `/moc`, `/commit`
+- **Web reader** — `reader.html` renders all notes into one browsable page, no build step
 - **Graceful fallback** — MCP unavailable? The workflow still runs
 - **Multi-topic** — Kafka, AWS, DSA, System Design... each gets its own repo
 

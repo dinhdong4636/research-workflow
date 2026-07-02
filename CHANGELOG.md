@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### New
+- `reader.html` — zero-build, dependency-free HTML page that renders all `.md` notes
+  into one browsable site (client-side `marked.js`, auto-discovers files via directory
+  listing, resolves Obsidian `[[wikilinks]]`, strips frontmatter). Shipped in both the
+  repo root (`docs/`) and `topic-template/` (every generated topic).
+- `/validate` now checks `reader.html` is present in the template.
+
 ## v1.0.0 — 2026-05-07
 
 ### New
